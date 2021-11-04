@@ -229,23 +229,6 @@ def create_rights_file(action, meta_name, objects, rights, fields, pre_condition
                 right_value = xml.SubElement(right_elem, "value")
                 right_value.text = "true"
 
-                # if (right == "Read") & (len(sub_fields) > 0):
-                #     restriction = xml.Element("restrictionByCondition")
-                #     condition = xml.SubElement(restriction, "condition")
-                #     text = pre_condition
-                #
-                #     for field in sub_fields:
-                #         condition_text = constraints[field]
-                #         if text == pre_condition:
-                #             text = text + condition_text
-                #         else:
-                #             text = text + and_string + condition_text
-                #
-                #     if sub_meta_name == "Контрагенты":
-                #         text = contractor_condition
-                #     condition.text = text
-                #
-                #     right_elem.append(restriction)
                 obj_elem.append(right_elem)
             root.append(obj_elem)
     os.makedirs(roles_path + folders_name)
@@ -285,6 +268,7 @@ def add_new_role(action, meta_name):
 
 def collect_fields(file, meta_name, type):
     fields = []
+
     tree = xml.parse(file)
     root = tree.getroot()
     catalog = root.find("{http://v8.1c.ru/8.3/MDClasses}" + type)
@@ -294,14 +278,16 @@ def collect_fields(file, meta_name, type):
     for elem in ch_obj.iter():
         tag_name = elem.tag.rpartition("}")[2]
         if tag_name == "TabularSection":
-            return fields
+            break
 
         if tag_name == "Attribute":
 
             props = elem.find("{http://v8.1c.ru/8.3/MDClasses}Properties")
             field_name = props.find("{http://v8.1c.ru/8.3/MDClasses}Name")
+
             if field_name.text in constraints_fields:
-                if (meta_name != "ЗаказПокупателя") & (field_name.text != "Бренд"):  # Исключение для заказа покупателя,
+                if (meta_name != "ЗаказПокупателя") != (field_name.text != "Бренд"):  # Исключение для заказа
+                    # покупателя,
                     # так как бренд там темерь не заполняется
                     if field_name.text not in fields:
                         fields.append(field_name.text)
