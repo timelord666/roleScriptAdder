@@ -9,6 +9,7 @@ roles_path = base_path + "Roles\\"
 catalogs_path = base_path + "Catalogs\\"
 documents_path = base_path + "Documents\\"
 reports_path = base_path + "Reports\\"
+data_processors_path = base_path + "DataProcessors\\"
 config = base_path + "Configuration.xml"
 actions = ["Чтение", "Добавление", "Изменение", "Удаление"]
 prefix = "l_"
@@ -26,6 +27,7 @@ rights_dic = {
     'УдалениеCatalog': ["Read", "Update", "Delete", "View", "Edit", "InteractiveDelete", "InteractiveSetDeletionMark",
                         "InteractiveClearDeletionMark", "InteractiveDeleteMarked"],
     'ИспользованиеReport': ["Use", "View"],
+    'ИспользованиеDataProcessor': ["Use", "View"],
     'delete_sub_objects': ["Read", "Update"],
     'ЧтениеDocument': ["Read", "View"],
     'ДобавлениеDocument': ["Read", "Insert", "View", "InteractiveInsert", "Posting", "InteractivePosting"],
@@ -185,6 +187,7 @@ def create_rights_file(action, meta_name, objects, rights, fields, pre_condition
         obj_elem = xml.Element("object")
         obj_name = xml.SubElement(obj_elem, "name")
         obj_name.text = obj
+
         for right in rights:
             right_elem = xml.Element("right")
             right_name = xml.SubElement(right_elem, "name")
@@ -325,11 +328,13 @@ def branch_in_use():
 def create_roles(file, actions, type):
     meta_name = os.path.basename(file).rpartition(".")[0]
     objs = [type + "." + meta_name]
-    if meta_name == "ОсновныеСредства":
+    if (meta_name == "ОсновныеСредства") | (meta_name == "KPI"):
         if type == "Catalog":
             meta_name = meta_name + "Справочник"
         elif type == "Register":
             meta_name = meta_name + "Отчёт"
+        elif type == "DataProcessor":
+            meta_name = meta_name + "Обработка"
         else:
             meta_name = meta_name + "Документ"
 
@@ -353,6 +358,9 @@ if __name__ == '__main__':
 
     for file in glob.iglob((reports_path + "/*.xml")):
         create_roles(file, ["Использование"], "Report")
+
+    for file in glob.iglob(data_processors_path + "/*.xml"):
+        create_roles(file, ["Использование"], "DataProcessor")
 
     # fields = collect_fields("C:\\dmsClean\\Catalogs\\ДоговорыКонтрагентов.xml", "ДоговорыКонтрагентов")
     # fields.append("Филиал")
