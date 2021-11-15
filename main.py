@@ -206,7 +206,6 @@ def create_rights_file(action, meta_name, objects, rights, fields, pre_condition
                         text = text + condition_text
                     else:
                         text = text + and_string + condition_text
-
                 if meta_name == "Контрагенты":
                     text = contractor_condition
                 elif meta_name == "Номенклатура":
@@ -231,6 +230,26 @@ def create_rights_file(action, meta_name, objects, rights, fields, pre_condition
                 right_name.text = right
                 right_value = xml.SubElement(right_elem, "value")
                 right_value.text = "true"
+
+                if (right == "Read") & (len(sub_fields) > 0):
+                    restriction = xml.Element("restrictionByCondition")
+                    condition = xml.SubElement(restriction, "condition")
+                    text = pre_condition
+
+                    for field in sub_fields:
+                        condition_text = constraints[field]
+                        if text == pre_condition:
+                            text = text + condition_text
+                        else:
+                            text = text + and_string + condition_text
+
+                    if sub_meta_name == "Контрагенты":
+                        text = contractor_condition
+                    elif sub_meta_name == "Номенклатура":
+                        text = "ТекущаяТаблица где ТекущаяТаблица.Бренд в (&ДоступныеБренды) ИЛИ ТекущаяТаблица.ЭтоГруппа"
+                    condition.text = text
+
+                    right_elem.append(restriction)
 
                 obj_elem.append(right_elem)
             root.append(obj_elem)
@@ -289,7 +308,7 @@ def collect_fields(file, meta_name, type):
             field_name = props.find("{http://v8.1c.ru/8.3/MDClasses}Name")
 
             if field_name.text in constraints_fields:
-                if (meta_name != "ЗаказПокупателя") != (field_name.text != "Бренд"):  # Исключение для заказа
+                if (meta_name != "ЗаказПокупателя") | (field_name.text != "Бренд"):  # Исключение для заказа
                     # покупателя,
                     # так как бренд там темерь не заполняется
                     if field_name.text not in fields:
@@ -328,13 +347,15 @@ def branch_in_use():
 def create_roles(file, actions, type):
     meta_name = os.path.basename(file).rpartition(".")[0]
     objs = [type + "." + meta_name]
-    if (meta_name == "ОсновныеСредства") | (meta_name == "KPI"):
+    if (meta_name == "ОсновныеСредства") | (meta_name == "KPI") | (meta_name == "ОтчетОСкидкахПервичные"):
         if type == "Catalog":
             meta_name = meta_name + "Справочник"
         elif type == "Register":
             meta_name = meta_name + "Отчёт"
         elif type == "DataProcessor":
             meta_name = meta_name + "Обработка"
+        elif type == "Report":
+            meta_name = meta_name + "Отчет"
         else:
             meta_name = meta_name + "Документ"
 
@@ -362,7 +383,8 @@ if __name__ == '__main__':
     for file in glob.iglob(data_processors_path + "/*.xml"):
         create_roles(file, ["Использование"], "DataProcessor")
 
-    # fields = collect_fields("C:\\dmsClean\\Catalogs\\ДоговорыКонтрагентов.xml", "ДоговорыКонтрагентов")
+    # fields = collect_fields("C:\\dmsOrigin\\Catalogs\\Контрагенты.xml", "Контрагенты", "Catalog")
+    # print(fields)
     # fields.append("Филиал")
     # create_base_role_file(uids, "Чтение", "ДоговорыКонтрагентов")
     # create_rights_file("Чтение", "ДоговорыКонтрагентов", ["Catalog.ДоговорыКонтрагентов"], ["Read", "View"], fields,
